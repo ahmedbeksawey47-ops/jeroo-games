@@ -1,19 +1,626 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>موقعي التفاعلي</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiro Meet & Chat - منصة المحادثات والاجتماعات</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --panel-bg: #1e1e1e;
+            --wa-green: #075e54;
+            --wa-light-green: #25d366;
+            --wa-bubble-out: #056162;
+            --wa-bubble-in: #262d31;
+            --meet-red: #ea4335;
+            --meet-blue: #1a73e8;
+            --text-color: #e9edef;
+            --text-muted: #8696a0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Header Navigation */
+        header {
+            background-color: var(--panel-bg);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .brand i {
+            color: var(--meet-blue);
+            font-size: 1.5rem;
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #2a2a2a;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
+        .room-code {
+            font-family: monospace;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            color: var(--wa-light-green);
+        }
+
+        .btn-copy {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-copy:hover {
+            color: #fff;
+        }
+
+        /* Main App Layout */
+        main {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 135px);
+            position: relative;
+        }
+
+        /* Video Stage (Google Meet View) */
+        .video-container {
+            flex: 1;
+            background-color: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-muted);
+        }
+
+        .video-placeholder i {
+            font-size: 4rem;
+        }
+
+        .user-tag {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Chat Sidebar (WhatsApp View) */
+        .chat-sidebar {
+            width: 380px;
+            background-color: #111b21;
+            border-right: 1px solid #222d34;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .chat-sidebar.collapsed {
+            margin-left: -380px;
+        }
+
+        .chat-header {
+            background-color: var(--panel-bg);
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #222d34;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .chat-title i {
+            color: var(--wa-light-green);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-image: radial-gradient(#202c33 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            word-break: break-word;
+        }
+
+        .message.sent {
+            align-self: flex-start;
+            background-color: var(--wa-bubble-out);
+            color: #e9edef;
+            border-top-right-radius: 0;
+        }
+
+        .message.received {
+            align-self: flex-end;
+            background-color: var(--wa-bubble-in);
+            color: #e9edef;
+            border-top-left-radius: 0;
+        }
+
+        .message .time {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+            text-align: left;
+            display: block;
+        }
+
+        .chat-input-area {
+            background-color: var(--panel-bg);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background-color: #2a3942;
+            border: none;
+            outline: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .btn-send, .btn-file {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-send {
+            color: var(--wa-light-green);
+        }
+
+        .btn-send:hover, .btn-file:hover {
+            transform: scale(1.1);
+        }
+
+        /* Bottom Controls (Google Meet Style) */
+        footer {
+            height: 75px;
+            background-color: var(--panel-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .time-display {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background-color: #3c4043;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background-color: #4a4e51;
+        }
+
+        .control-btn.active-off {
+            background-color: var(--meet-red);
+        }
+
+        .control-btn.active-off:hover {
+            background-color: #d93025;
+        }
+
+        .btn-end-call {
+            background-color: var(--meet-red);
+            width: 56px;
+            height: 48px;
+            border-radius: 24px;
+        }
+
+        .btn-end-call:hover {
+            background-color: #d93025;
+        }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+            }
+            .chat-sidebar {
+                width: 100%;
+                height: 40%;
+            }
+            .chat-sidebar.collapsed {
+                margin-left: 0;
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🚀 مرحباً بك في موقعك التفاعلي</h1>
-    <p>تم إنشاؤه عبر <strong>الطلائع استوديو كود</strong> بألوان وتحكم كامليْن.</p>
-    
-    <button id="action-btn">اضغط للتجربة</button>
-    <div id="result"></div>
-  </div>
 
-  <script src="script.js"></script>
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand">
+            <i class="fa-solid fa-video"></i>
+            <span>Jiro Meet & Chat</span>
+        </div>
+
+        <div class="room-info">
+            <span>رمز الاجتماع:</span>
+            <span class="room-code" id="roomCode">jiro-meet-882</span>
+            <button class="btn-copy" onclick="copyRoomCode()" title="نسخ الرمز">
+                <i class="fa-regular fa-copy"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Section -->
+    <main>
+        <!-- Video Conference Grid -->
+        <section class="video-container">
+            <div class="video-wrapper">
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <i class="fa-solid fa-user-slash"></i>
+                    <span>الكاميرا مغلقة</span>
+                </div>
+                <div class="user-tag">
+                    <i class="fa-solid fa-microphone-slash" id="micStatusIcon" style="color: #ea4335;"></i>
+                    <span>أنت (المستضيف)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- WhatsApp Chat Sidebar -->
+        <aside class="chat-sidebar" id="chatSidebar">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>محادثة الاجتماع</span>
+                </div>
+                <button class="btn-copy" onclick="toggleChat()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message sent">
+                    أهلاً بك في غرفة الاجتماعات Jiro Meet! 🚀
+                    <span class="time">10:40 م</span>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <button class="btn-file" onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
+                <input type="file" id="fileInput" hidden onchange="sendFile(this)">
+                <input type="text" id="chatInput" placeholder="اكتب رسالة..." onkeypress="handleKeyPress(event)">
+                <button class="btn-send" onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Controls Footer -->
+    <footer>
+        <div class="time-display" id="clock">10:40 PM</div>
+
+        <div class="controls-center">
+            <button class="control-btn active-off" id="micBtn" onclick="toggleMic()" title="المايك">
+                <i class="fa-solid fa-microphone-slash"></i>
+            </button>
+
+            <button class="control-btn active-off" id="camBtn" onclick="toggleCam()" title="الكاميرا">
+                <i class="fa-solid fa-video-slash"></i>
+            </button>
+
+            <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" title="مشاركة الشاشة">
+                <i class="fa-solid fa-desktop"></i>
+            </button>
+
+            <button class="control-btn btn-end-call" onclick="endCall()" title="إنهاء المكالمة">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+        </div>
+
+        <div class="controls-right">
+            <button class="control-btn" onclick="toggleChat()" title="المحادثة">
+                <i class="fa-solid fa-message"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- JavaScript Media Logic & Interface interactivity -->
+    <script>
+        let localStream = null;
+        let isMicOn = false;
+        let isCamOn = false;
+        let isScreenSharing = false;
+
+        const localVideo = document.getElementById('localVideo');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const micBtn = document.getElementById('micBtn');
+        const camBtn = document.getElementById('camBtn');
+        const micStatusIcon = document.getElementById('micStatusIcon');
+        const chatSidebar = document.getElementById('chatSidebar');
+
+        // Clock Update
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Toggle Microphone
+        async function toggleMic() {
+            isMicOn = !isMicOn;
+            if (isMicOn) {
+                if (!localStream) await initStream();
+                if (localStream && localStream.getAudioTracks().length > 0) {
+                    localStream.getAudioTracks()[0].enabled = true;
+                }
+                micBtn.classList.remove('active-off');
+                micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                micStatusIcon.className = 'fa-solid fa-microphone';
+                micStatusIcon.style.color = '#25d366';
+            } else {
+                if (localStream && localStream.getAudioTracks().length > 0) {
+                    localStream.getAudioTracks()[0].enabled = false;
+                }
+                micBtn.classList.add('active-off');
+                micBtn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                micStatusIcon.className = 'fa-solid fa-microphone-slash';
+                micStatusIcon.style.color = '#ea4335';
+            }
+        }
+
+        // Toggle Camera
+        async function toggleCam() {
+            isCamOn = !isCamOn;
+            if (isCamOn) {
+                if (!localStream) await initStream();
+                if (localStream && localStream.getVideoTracks().length > 0) {
+                    localStream.getVideoTracks()[0].enabled = true;
+                    localVideo.srcObject = localStream;
+                    videoPlaceholder.style.display = 'none';
+                }
+                camBtn.classList.remove('active-off');
+                camBtn.innerHTML = '<i class="fa-solid fa-video"></i>';
+            } else {
+                if (localStream && localStream.getVideoTracks().length > 0) {
+                    localStream.getVideoTracks()[0].enabled = false;
+                }
+                videoPlaceholder.style.display = 'flex';
+                camBtn.classList.add('active-off');
+                camBtn.innerHTML = '<i class="fa-solid fa-video-slash"></i>';
+            }
+        }
+
+        // Initialize User Stream
+        async function initStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                // Initially keep muted until explicit toggle
+                localStream.getAudioTracks().forEach(t => t.enabled = isMicOn);
+                localStream.getVideoTracks().forEach(t => t.enabled = isCamOn);
+            } catch (err) {
+                console.warn("إذن الكاميرا/المايك غير متاح حالياً:", err);
+            }
+        }
+
+        // Screen Sharing
+        async function toggleScreenShare() {
+            if (!isScreenSharing) {
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    localVideo.srcObject = screenStream;
+                    videoPlaceholder.style.display = 'none';
+                    isScreenSharing = true;
+                    document.getElementById('screenBtn').style.color = '#1a73e8';
+
+                    screenStream.getVideoTracks()[0].onended = () => {
+                        stopScreenShare();
+                    };
+                } catch (err) {
+                    console.log("تم إلغاء مشاركة الشاشة");
+                }
+            } else {
+                stopScreenShare();
+            }
+        }
+
+        function stopScreenShare() {
+            isScreenSharing = false;
+            document.getElementById('screenBtn').style.color = '#fff';
+            if (isCamOn && localStream) {
+                localVideo.srcObject = localStream;
+            } else {
+                videoPlaceholder.style.display = 'flex';
+            }
+        }
+
+        // Toggle Chat Window
+        function toggleChat() {
+            chatSidebar.classList.toggle('collapsed');
+        }
+
+        // Copy Room Code
+        function copyRoomCode() {
+            const code = document.getElementById('roomCode').innerText;
+            navigator.clipboard.writeText(code);
+            alert('تم نسخ رمز الاجتماع: ' + code);
+        }
+
+        // Chat Messaging Logic
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatMessages = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message sent';
+            msgDiv.innerHTML = `${text}<span class="time">${time}</span>`;
+            
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            input.value = '';
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function sendFile(input) {
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                const chatMessages = document.getElementById('chatMessages');
+                const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message sent';
+                msgDiv.innerHTML = `<i class="fa-solid fa-file-lines"></i> <b>مرفق:</b> ${fileName}<span class="time">${time}</span>`;
+                
+                chatMessages.appendChild(msgDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function endCall() {
+            if (confirm("هل تريد مغادرة الاجتماع؟")) {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                document.body.innerHTML = `
+                    <div style="height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#121212; color:#fff;">
+                        <h2>لقد غادرت الاجتماع</h2>
+                        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:#1a73e8; color:#fff; border:none; border-radius:8px; cursor:pointer;">إعادة الانضمام</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
 </body>
 </html>
