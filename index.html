@@ -1,577 +1,776 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jiro Meet & Chat - منصة المحادثات والاجتماعات</title>
-    <!-- Google Fonts & Font Awesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PeerJS for Instant Real-Time Video & Audio Connection -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual Studio Code - Web Edition</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Monaco Editor CSS & Loader -->
+  <link rel="stylesheet" data-name="vs/editor/cdnjs/node_modules/monaco-editor/min/vs/editor/editor.main.css" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/editor/editor.main.min.css">
 
-    <style>
-        :root {
-            --bg-dark: #121212;
-            --panel-bg: #1e1e1e;
-            --wa-green: #075e54;
-            --wa-light-green: #25d366;
-            --wa-bubble-out: #056162;
-            --wa-bubble-in: #262d31;
-            --meet-red: #ea4335;
-            --meet-blue: #1a73e8;
-            --text-color: #e9edef;
-            --text-muted: #8696a0;
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            vscode: {
+              titlebar: '#323233',
+              activity: '#333333',
+              sidebar: '#252526',
+              editor: '#1e1e1e',
+              tabActive: '#1e1e1e',
+              tabInactive: '#2d2d2d',
+              panel: '#1e1e1e',
+              statusbar: '#007acc',
+              border: '#3c3c3c',
+              hover: '#37373d',
+              accent: '#0e639c'
+            }
+          }
         }
+      }
+    }
+  </script>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Cairo', sans-serif;
-        }
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #cccccc;
+      user-select: none;
+    }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-color);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-corner {
+      background: #1e1e1e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #424242;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4f4f4f;
+    }
 
-        header {
-            background-color: var(--panel-bg);
-            padding: 12px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #2a2a2a;
-        }
+    /* Resizer styling */
+    .gutter {
+      background-color: #2d2d2d;
+      background-repeat: no-repeat;
+      background-position: 50%;
+      z-index: 10;
+    }
+    .gutter:hover {
+      background-color: #007acc;
+    }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .brand i {
-            color: var(--meet-blue);
-            font-size: 1.5rem;
-        }
-
-        .room-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #2a2a2a;
-            padding: 6px 16px;
-            border-radius: 20px;
-        }
-
-        .room-code {
-            font-family: monospace;
-            font-size: 0.95rem;
-            color: var(--wa-light-green);
-        }
-
-        .btn-copy {
-            background: #1a73e8;
-            border: none;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-        }
-
-        .btn-copy:hover {
-            background: #1557b0;
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            height: calc(100vh - 135px);
-            position: relative;
-        }
-
-        .video-container {
-            flex: 1;
-            background-color: #000;
-            position: relative;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            padding: 15px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            min-height: 250px;
-            border-radius: 12px;
-            overflow: hidden;
-            background-color: #1a1a1a;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .video-placeholder {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            color: var(--text-muted);
-        }
-
-        .user-tag {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .chat-sidebar {
-            width: 360px;
-            background-color: #111b21;
-            border-right: 1px solid #222d34;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
-
-        .chat-sidebar.collapsed {
-            display: none;
-        }
-
-        .chat-header {
-            background-color: var(--panel-bg);
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #222d34;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background-image: radial-gradient(#202c33 1px, transparent 0);
-            background-size: 24px 24px;
-        }
-
-        .message {
-            max-width: 85%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            position: relative;
-            word-break: break-word;
-        }
-
-        .message.sent {
-            align-self: flex-start;
-            background-color: var(--wa-bubble-out);
-            color: #e9edef;
-        }
-
-        .message.received {
-            align-self: flex-end;
-            background-color: var(--wa-bubble-in);
-            color: #e9edef;
-        }
-
-        .message .time {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.6);
-            margin-top: 4px;
-            display: block;
-        }
-
-        .chat-input-area {
-            background-color: var(--panel-bg);
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chat-input-area input {
-            flex: 1;
-            background-color: #2a3942;
-            border: none;
-            outline: none;
-            padding: 10px 14px;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 0.9rem;
-        }
-
-        .btn-send, .btn-file {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-
-        .btn-send {
-            color: var(--wa-light-green);
-        }
-
-        footer {
-            height: 75px;
-            background-color: var(--panel-bg);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            border-top: 1px solid #2a2a2a;
-        }
-
-        .controls-center {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .control-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: none;
-            background-color: #3c4043;
-            color: #fff;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .control-btn.active-off {
-            background-color: var(--meet-red);
-        }
-
-        .btn-end-call {
-            background-color: var(--meet-red);
-            width: 56px;
-            height: 48px;
-            border-radius: 24px;
-        }
-    </style>
+    .monaco-editor {
+      padding-top: 4px;
+    }
+  </style>
 </head>
-<body>
+<body class="flex flex-col h-screen text-xs">
 
-    <header>
-        <div class="brand">
-            <i class="fa-solid fa-video"></i>
-            <span>Jiro Meet & Chat</span>
+  <!-- TOP TITLEBAR -->
+  <div class="h-9 bg-vscode-titlebar border-b border-vscode-border flex items-center justify-between px-3 text-gray-300 text-xs shrink-0 select-none">
+    <div class="flex items-center space-x-3">
+      <i class="fa-brands fa-microsoft text-blue-500 text-sm"></i>
+      <div class="flex space-x-2 text-gray-400">
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="showMenuAlert('File')">File</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="showMenuAlert('Edit')">Edit</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="showMenuAlert('Selection')">Selection</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="toggleSidebar()">View</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="runLivePreview()">Run</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="toggleTerminal()">Terminal</span>
+        <span class="hover:bg-vscode-hover px-2 py-1 rounded cursor-pointer transition-colors" onclick="showMenuAlert('Help')">Help</span>
+      </div>
+    </div>
+
+    <div class="font-medium text-gray-400 flex items-center space-x-2">
+      <span id="activeTitleFilename">index.html</span>
+      <span>- Visual Studio Code Web</span>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <button onclick="runLivePreview()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded flex items-center space-x-1 font-semibold text-xs shadow">
+        <i class="fa-solid fa-play text-[10px]"></i>
+        <span>Run</span>
+      </button>
+      <button onclick="openSettingsModal()" class="hover:bg-vscode-hover p-1.5 rounded text-gray-400 hover:text-white">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN BODY (Activity Bar + Sidebar + Editor + Preview) -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ACTIVITY BAR (Far Left) -->
+    <div class="w-12 bg-vscode-activity flex flex-col justify-between items-center py-2 shrink-0 border-r border-vscode-border">
+      <div class="flex flex-col space-y-4 text-gray-500 text-lg w-full items-center">
+        <button id="navExplorerBtn" class="p-2 text-white border-l-2 border-blue-500 w-full flex justify-center hover:text-white" onclick="switchSidebarTab('explorer')">
+          <i class="fa-regular fa-copy"></i>
+        </button>
+        <button id="navSearchBtn" class="p-2 hover:text-white w-full flex justify-center" onclick="switchSidebarTab('search')">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <button id="navGitBtn" class="p-2 hover:text-white w-full flex justify-center" onclick="switchSidebarTab('git')">
+          <i class="fa-solid fa-code-branch"></i>
+        </button>
+        <button id="navDebugBtn" class="p-2 hover:text-white w-full flex justify-center" onclick="switchSidebarTab('debug')">
+          <i class="fa-solid fa-bug"></i>
+        </button>
+        <button id="navExtensionsBtn" class="p-2 hover:text-white w-full flex justify-center" onclick="switchSidebarTab('extensions')">
+          <i class="fa-solid fa-cubes"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col space-y-4 text-gray-500 text-lg items-center">
+        <button onclick="openSettingsModal()" class="hover:text-white">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR PANEL -->
+    <div id="sidebarPanel" class="w-60 bg-vscode-sidebar border-r border-vscode-border flex flex-col shrink-0">
+      
+      <!-- Explorer Header -->
+      <div class="p-2.5 uppercase font-semibold text-[11px] tracking-wider text-gray-400 flex justify-between items-center border-b border-vscode-border">
+        <span id="sidebarTitle">Explorer</span>
+        <div class="flex space-x-1">
+          <button onclick="addNewFilePrompt()" title="New File" class="hover:bg-vscode-hover px-1.5 py-0.5 rounded text-gray-300">
+            <i class="fa-solid fa-file-circle-plus"></i>
+          </button>
+          <button onclick="resetWorkspacePrompt()" title="Reset Default Files" class="hover:bg-vscode-hover px-1.5 py-0.5 rounded text-gray-300">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Explorer Content File Tree -->
+      <div id="sidebarContent" class="flex-1 overflow-y-auto p-2">
+        <div class="text-xs font-bold text-gray-400 mb-2 flex items-center space-x-1 cursor-pointer">
+          <i class="fa-solid fa-chevron-down text-[10px]"></i>
+          <span>COSTA-CODE-PROJECT</span>
+        </div>
+        
+        <div id="fileListTree" class="space-y-0.5 pr-1">
+          <!-- Files rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRAL EDITOR & PREVIEW CONTAINER -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- TOP WORKSPACE SPLIT (Editor + Live Preview) -->
+      <div class="flex-1 flex overflow-hidden">
+
+        <!-- EDITOR CONTAINER -->
+        <div class="flex-1 flex flex-col border-r border-vscode-border min-w-0">
+          
+          <!-- Tab Bar -->
+          <div id="tabBar" class="h-9 bg-vscode-sidebar flex items-center overflow-x-auto border-b border-vscode-border shrink-0 select-none">
+            <!-- Tabs rendered dynamically -->
+          </div>
+
+          <!-- Breadcrumb Bar -->
+          <div class="h-6 bg-vscode-editor border-b border-vscode-border flex items-center px-3 text-gray-400 text-[11px] space-x-1">
+            <span>workspace</span>
+            <i class="fa-solid fa-chevron-right text-[9px]"></i>
+            <span id="breadcrumbFileName" class="text-gray-200">index.html</span>
+          </div>
+
+          <!-- Monaco Editor Div -->
+          <div id="editorContainer" class="flex-1 w-full h-full relative"></div>
         </div>
 
-        <div class="room-info">
-            <span>رمز الغرفة:</span>
-            <span class="room-code" id="roomCode">جاري التجهيز...</span>
-            <button class="btn-copy" onclick="copyInviteLink()">
-                <i class="fa-regular fa-copy"></i>
-                <span>نسخ رابط الدعوة</span>
-            </button>
+        <!-- LIVE PREVIEW CONTAINER -->
+        <div id="previewContainer" class="w-1/2 flex flex-col bg-white border-l border-vscode-border relative">
+          
+          <!-- Preview Header Toolbar -->
+          <div class="h-9 bg-vscode-titlebar border-b border-vscode-border flex items-center justify-between px-3 text-gray-300 shrink-0">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-globe text-emerald-500"></i>
+              <span class="font-semibold text-xs">Browser Preview</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="runLivePreview()" class="hover:bg-vscode-hover p-1 rounded text-gray-300" title="Refresh Preview">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+              <button onclick="togglePreview()" class="hover:bg-vscode-hover p-1 rounded text-gray-300" title="Close Preview">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live iFrame -->
+          <iframe id="livePreviewFrame" class="w-full flex-1 bg-white border-none"></iframe>
         </div>
-    </header>
 
-    <main>
-        <section class="video-container" id="videoContainer">
-            <div class="video-wrapper" id="localWrapper">
-                <video id="localVideo" autoplay playsinline muted></video>
-                <div class="video-placeholder" id="videoPlaceholder">
-                    <i class="fa-solid fa-user-slash" style="font-size: 3rem;"></i>
-                    <span>الكاميرا مغلقة</span>
-                </div>
-                <div class="user-tag">
-                    <i class="fa-solid fa-microphone-slash" id="micStatusIcon" style="color: #ea4335;"></i>
-                    <span>أنت (المستضيف)</span>
-                </div>
-            </div>
-        </section>
+      </div>
 
-        <aside class="chat-sidebar" id="chatSidebar">
-            <div class="chat-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fa-brands fa-whatsapp" style="color:var(--wa-light-green);"></i>
-                    <span>محادثة الاجتماع</span>
-                </div>
-                <button style="background:none; border:none; color:#fff; cursor:pointer;" onclick="toggleChat()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="chat-messages" id="chatMessages">
-                <div class="message sent">
-                    مرحباً بك! قم بنسخ رابط الدعوة وإرساله لأصدقائك للانضمام فوراً. 🚀
-                    <span class="time">الآن</span>
-                </div>
-            </div>
-
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="اكتب رسالة..." onkeypress="handleKeyPress(event)">
-                <button class="btn-send" onclick="sendMessage()">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </div>
-        </aside>
-    </main>
-
-    <footer>
-        <div style="color: var(--text-muted);" id="clock">--:--</div>
-
-        <div class="controls-center">
-            <button class="control-btn active-off" id="micBtn" onclick="toggleMic()" title="المايك">
-                <i class="fa-solid fa-microphone-slash"></i>
+      <!-- BOTTOM TERMINAL PANEL -->
+      <div id="terminalPanel" class="h-44 bg-vscode-panel border-t border-vscode-border flex flex-col">
+        
+        <!-- Terminal Header -->
+        <div class="h-8 bg-vscode-sidebar flex items-center justify-between px-3 border-b border-vscode-border select-none">
+          <div class="flex space-x-4 text-xs font-semibold">
+            <span class="text-white border-b border-blue-500 pb-1 cursor-pointer">TERMINAL</span>
+            <span class="text-gray-400 hover:text-white cursor-pointer" onclick="clearTerminal()">OUTPUT</span>
+            <span class="text-gray-400 hover:text-white cursor-pointer" onclick="clearTerminal()">PROBLEMS</span>
+          </div>
+          <div class="flex items-center space-x-2 text-gray-400">
+            <button onclick="clearTerminal()" title="Clear Terminal" class="hover:text-white">
+              <i class="fa-solid fa-ban"></i>
             </button>
-            <button class="control-btn active-off" id="camBtn" onclick="toggleCam()" title="الكاميرا">
-                <i class="fa-solid fa-video-slash"></i>
+            <button onclick="toggleTerminal()" title="Close Terminal" class="hover:text-white">
+              <i class="fa-solid fa-xmark"></i>
             </button>
-            <button class="control-btn" onclick="toggleScreenShare()" title="مشاركة الشاشة">
-                <i class="fa-solid fa-desktop"></i>
-            </button>
-            <button class="control-btn btn-end-call" onclick="endCall()" title="مغادرة">
-                <i class="fa-solid fa-phone-slash"></i>
-            </button>
+          </div>
+        </div>
+
+        <!-- Terminal Output Area -->
+        <div id="terminalOutput" class="flex-1 p-3 font-mono text-xs overflow-y-auto space-y-1 text-gray-300">
+          <div><span class="text-emerald-400">CostaCode VSCode Web Shell v1.0.0</span> - Type <span class="text-yellow-400">'help'</span> for available commands.</div>
+        </div>
+
+        <!-- Terminal Command Input Line -->
+        <div class="px-3 py-1.5 border-t border-vscode-border flex items-center space-x-2 font-mono text-xs">
+          <span class="text-emerald-400">bash$</span>
+          <input type="text" id="terminalInput" class="flex-1 bg-transparent border-none outline-none text-gray-200" placeholder="Type a command (e.g. node script.js, ls, help, run)..." onkeydown="handleTerminalCommand(event)" />
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- STATUS BAR (Bottom) -->
+  <div class="h-6 bg-vscode-statusbar text-white flex items-center justify-between px-3 text-[11px] select-none shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-1 cursor-pointer hover:bg-white/10 px-1 py-0.5 rounded">
+        <i class="fa-solid fa-code-branch"></i>
+        <span>main*</span>
+      </div>
+      <div class="flex items-center space-x-1">
+        <i class="fa-solid fa-circle-xmark text-red-300"></i>
+        <span>0</span>
+        <i class="fa-solid fa-triangle-exclamation text-yellow-300 ml-1"></i>
+        <span>0</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <span id="statusBarCursor">Ln 1, Col 1</span>
+      <span>UTF-8</span>
+      <span id="statusBarLanguage">HTML</span>
+      <span class="cursor-pointer hover:bg-white/10 px-1 py-0.5 rounded"><i class="fa-solid fa-bell"></i></span>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-vscode-sidebar border border-vscode-border rounded-lg w-full max-w-md p-6 space-y-4 text-gray-200 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-vscode-border pb-3">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-blue-500"></i>
+          <span>Editor Settings</span>
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block mb-1 text-gray-400">Font Size (px)</label>
+          <input type="number" id="settingFontSize" value="14" class="w-full bg-vscode-editor border border-vscode-border rounded p-2 text-white outline-none focus:border-blue-500" />
         </div>
 
         <div>
-            <button class="control-btn" onclick="toggleChat()" title="المحادثة">
-                <i class="fa-solid fa-message"></i>
-            </button>
+          <label class="block mb-1 text-gray-400">Tab Size (Spaces)</label>
+          <select id="settingTabSize" class="w-full bg-vscode-editor border border-vscode-border rounded p-2 text-white outline-none focus:border-blue-500">
+            <option value="2">2 Spaces</option>
+            <option value="4" selected>4 Spaces</option>
+          </select>
         </div>
-    </footer>
 
-    <script>
-        let peer = null;
-        let conn = null;
-        let localStream = null;
-        let isMicOn = false;
-        let isCamOn = false;
+        <div>
+          <label class="block mb-1 text-gray-400">Word Wrap</label>
+          <select id="settingWordWrap" class="w-full bg-vscode-editor border border-vscode-border rounded p-2 text-white outline-none focus:border-blue-500">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetPeerId = urlParams.get('room');
+      <div class="pt-3 border-t border-vscode-border flex justify-end space-x-2">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs font-semibold">Cancel</button>
+        <button onclick="saveSettings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold">Save Settings</button>
+      </div>
+    </div>
+  </div>
 
-        // Clock
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        }, 1000);
+  <!-- Monaco Editor Dependency Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
 
-        // Initialize WebRTC Peer
-        function initPeer() {
-            peer = new Peer();
+  <script>
+    // INITIAL PROJECT TEMPLATES
+    const DEFAULT_FILES = {
+      'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Costa Code App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Welcome to Costa Code!</h1>
+    <p>This live web preview updates instantly as you edit your code.</p>
+    <button id="btn" onclick="sayHello()">Click Me!</button>
+    <p id="output"></p>
+  </div>
 
-            peer.on('open', (id) => {
-                document.getElementById('roomCode').innerText = id;
-                if (targetPeerId) {
-                    connectToPeer(targetPeerId);
-                }
-            });
+  <script src="script.js"><\/script>
+</body>
+</html>`,
 
-            // Receive incoming call
-            peer.on('call', (call) => {
-                call.answer(localStream);
-                call.on('stream', (remoteStream) => {
-                    addRemoteVideo(remoteStream);
-                });
-            });
+      'styles.css': `body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
 
-            // Receive incoming chat connection
-            peer.on('connection', (connection) => {
-                conn = connection;
-                setupChatConnection();
-            });
+.card {
+  background: rgba(30, 41, 59, 0.8);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  border: 1px solid #334155;
+  text-align: center;
+  max-width: 400px;
+}
+
+h1 {
+  color: #38bdf8;
+  margin-top: 0;
+}
+
+button {
+  background: #0284c7;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #0369a1;
+  transform: scale(1.05);
+}`,
+
+      'script.js': `function sayHello() {
+  const output = document.getElementById('output');
+  output.style.marginTop = '15px';
+  output.style.color = '#4ade80';
+  output.innerHTML = '✨ Hello from Costa Code VS Code Web Editor!';
+  console.log('Button clicked inside iframe preview!');
+}`,
+
+      'package.json': `{
+  "name": "costa-code-project",
+  "version": "1.0.0",
+  "description": "Browser VS Code sample project",
+  "main": "script.js",
+  "dependencies": {}
+}`
+    };
+
+    // STATE MANAGEMENT
+    let files = JSON.parse(localStorage.getItem('vscode_files')) || { ...DEFAULT_FILES };
+    let openTabs = ['index.html', 'styles.css', 'script.js'];
+    let activeFile = 'index.html';
+    let editor = null;
+
+    // Load Monaco Editor
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
+
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editorContainer'), {
+        value: files[activeFile] || '',
+        language: getLanguage(activeFile),
+        theme: 'vs-dark',
+        fontSize: 14,
+        automaticLayout: true,
+        minimap: { enabled: true },
+        scrollBeyondLastLine: false,
+        wordWrap: 'on'
+      });
+
+      // Event listener on code changes
+      editor.onDidChangeModelContent(() => {
+        if (activeFile) {
+          files[activeFile] = editor.getValue();
+          saveFilesToStorage();
+          runLivePreview();
         }
+      });
 
-        async function initStream() {
+      // Cursor position updates
+      editor.onDidChangeCursorPosition((e) => {
+        document.getElementById('statusBarCursor').innerText = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      });
+
+      renderExplorer();
+      renderTabs();
+      runLivePreview();
+    });
+
+    // Helper: Map extension to language
+    function getLanguage(filename) {
+      if (filename.endsWith('.html')) return 'html';
+      if (filename.endsWith('.css')) return 'css';
+      if (filename.endsWith('.js')) return 'javascript';
+      if (filename.endsWith('.json')) return 'json';
+      return 'plaintext';
+    }
+
+    // Helper: Get File Icon
+    function getFileIcon(filename) {
+      if (filename.endsWith('.html')) return '<i class="fa-brands fa-html5 text-orange-500"></i>';
+      if (filename.endsWith('.css')) return '<i class="fa-brands fa-css3-alt text-blue-400"></i>';
+      if (filename.endsWith('.js')) return '<i class="fa-brands fa-js text-yellow-400"></i>';
+      if (filename.endsWith('.json')) return '<i class="fa-solid fa-code text-green-400"></i>';
+      return '<i class="fa-regular fa-file text-gray-400"></i>';
+    }
+
+    // Save to LocalStorage
+    function saveFilesToStorage() {
+      localStorage.setItem('vscode_files', JSON.stringify(files));
+    }
+
+    // Render Explorer Tree
+    function renderExplorer() {
+      const tree = document.getElementById('fileListTree');
+      tree.innerHTML = '';
+
+      Object.keys(files).forEach(filename => {
+        const isActive = filename === activeFile;
+        const div = document.createElement('div');
+        div.className = `flex items-center justify-between px-2 py-1 rounded cursor-pointer group text-xs ${isActive ? 'bg-vscode-hover text-white font-medium' : 'text-gray-400 hover:bg-vscode-hover hover:text-gray-200'}`;
+        
+        div.innerHTML = `
+          <div class="flex items-center space-x-2 truncate" onclick="switchToFile('${filename}')">
+            ${getFileIcon(filename)}
+            <span class="truncate">${filename}</span>
+          </div>
+          <div class="hidden group-hover:flex items-center space-x-1">
+            <button onclick="deleteFilePrompt('${filename}')" title="Delete" class="hover:text-red-400 p-0.5">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+        tree.appendChild(div);
+      });
+    }
+
+    // Render Tabs
+    function renderTabs() {
+      const tabBar = document.getElementById('tabBar');
+      tabBar.innerHTML = '';
+
+      openTabs.forEach(filename => {
+        const isActive = filename === activeFile;
+        const tab = document.createElement('div');
+        tab.className = `h-full px-3 flex items-center space-x-2 border-r border-vscode-border cursor-pointer text-xs shrink-0 select-none ${isActive ? 'bg-vscode-tabActive text-white border-t-2 border-t-blue-500' : 'bg-vscode-tabInactive text-gray-400 hover:bg-vscode-hover'}`;
+        
+        tab.innerHTML = `
+          <span onclick="switchToFile('${filename}')" class="flex items-center space-x-1.5">
+            ${getFileIcon(filename)}
+            <span>${filename}</span>
+          </span>
+          <button onclick="closeTab('${filename}')" class="hover:bg-gray-700 p-0.5 rounded text-gray-400 hover:text-white">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        `;
+        tabBar.appendChild(tab);
+      });
+
+      document.getElementById('breadcrumbFileName').innerText = activeFile || 'No file open';
+      document.getElementById('activeTitleFilename').innerText = activeFile || 'VS Code';
+      document.getElementById('statusBarLanguage').innerText = getLanguage(activeFile).toUpperCase();
+    }
+
+    // Switch File
+    function switchToFile(filename) {
+      if (!files[filename]) return;
+
+      if (!openTabs.includes(filename)) {
+        openTabs.push(filename);
+      }
+
+      activeFile = filename;
+      
+      if (editor) {
+        monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filename));
+        editor.setValue(files[filename]);
+      }
+
+      renderExplorer();
+      renderTabs();
+    }
+
+    // Close Tab
+    function closeTab(filename) {
+      openTabs = openTabs.filter(t => t !== filename);
+      if (activeFile === filename) {
+        activeFile = openTabs[openTabs.length - 1] || '';
+        if (activeFile) {
+          switchToFile(activeFile);
+        } else if (editor) {
+          editor.setValue('');
+        }
+      }
+      renderTabs();
+      renderExplorer();
+    }
+
+    // Add New File
+    function addNewFilePrompt() {
+      const name = prompt('Enter new file name (e.g. app.js, index.html, styles.css):');
+      if (!name) return;
+
+      if (files[name]) {
+        alert('File already exists!');
+        return;
+      }
+
+      files[name] = '';
+      saveFilesToStorage();
+      switchToFile(name);
+    }
+
+    // Delete File
+    function deleteFilePrompt(filename) {
+      if (confirm(`Are you sure you want to delete ${filename}?`)) {
+        delete files[filename];
+        saveFilesToStorage();
+        closeTab(filename);
+        renderExplorer();
+      }
+    }
+
+    // Reset Default Workspace
+    function resetWorkspacePrompt() {
+      if (confirm('Reset workspace to default files? Your edits will be replaced.')) {
+        files = { ...DEFAULT_FILES };
+        saveFilesToStorage();
+        openTabs = ['index.html', 'styles.css', 'script.js'];
+        switchToFile('index.html');
+      }
+    }
+
+    // LIVE PREVIEW RENDERER
+    function runLivePreview() {
+      const iframe = document.getElementById('livePreviewFrame');
+      const html = files['index.html'] || '';
+      const css = files['styles.css'] || '';
+      const js = files['script.js'] || '';
+
+      const combinedSource = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>${css}</style>
+        </head>
+        <body>
+          ${html}
+          <script>
+            // Redirect console logs to VS Code Terminal
+            const _log = console.log;
+            console.log = function(...args) {
+              _log(...args);
+              window.parent.postMessage({ type: 'CONSOLE_LOG', data: args.join(' ') }, '*');
+            };
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-                localStream.getAudioTracks().forEach(t => t.enabled = isMicOn);
-                localStream.getVideoTracks().forEach(t => t.enabled = isCamOn);
+              ${js}
+            } catch(err) {
+              console.log('Error: ' + err.message);
+            }
+          <\/script>
+        </body>
+        </html>
+      `;
+
+      iframe.srcdoc = combinedSource;
+    }
+
+    // Listen for Console logs from iframe
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'CONSOLE_LOG') {
+        printTerminalOutput(`[Iframe Console]: ${e.data.data}`, 'text-blue-400');
+      }
+    });
+
+    // TERMINAL INTERACTIVE COMMANDS
+    function handleTerminalCommand(e) {
+      if (e.key === 'Enter') {
+        const input = e.target.value.trim();
+        if (!input) return;
+
+        printTerminalOutput(`bash$ ${input}`, 'text-gray-200');
+        e.target.value = '';
+
+        const args = input.split(' ');
+        const cmd = args[0].toLowerCase();
+
+        if (cmd === 'help') {
+          printTerminalOutput('Available Commands:', 'text-yellow-400');
+          printTerminalOutput(' - ls : List workspace files');
+          printTerminalOutput(' - cat <filename> : Print file contents');
+          printTerminalOutput(' - node <filename.js> : Execute JS file in shell');
+          printTerminalOutput(' - clear : Clear terminal window');
+          printTerminalOutput(' - run : Trigger Live Preview refresh');
+        } else if (cmd === 'ls') {
+          printTerminalOutput(Object.keys(files).join('   '), 'text-emerald-400');
+        } else if (cmd === 'cat') {
+          const fn = args[1];
+          if (files[fn]) {
+            printTerminalOutput(files[fn], 'text-gray-300');
+          } else {
+            printTerminalOutput(`cat: ${fn}: No such file`, 'text-red-400');
+          }
+        } else if (cmd === 'node') {
+          const fn = args[1] || 'script.js';
+          if (files[fn]) {
+            try {
+              const result = eval(files[fn]);
+              printTerminalOutput(`[Executed ${fn} successfully]`, 'text-emerald-400');
             } catch (err) {
-                console.warn("إذن الكاميرا/المايك لم يمنح بعد:", err);
+              printTerminalOutput(`Runtime Error: ${err.message}`, 'text-red-400');
             }
+          } else {
+            printTerminalOutput(`node: ${fn}: File not found`, 'text-red-400');
+          }
+        } else if (cmd === 'clear') {
+          clearTerminal();
+        } else if (cmd === 'run') {
+          runLivePreview();
+          printTerminalOutput('Preview refreshed successfully.', 'text-emerald-400');
+        } else {
+          printTerminalOutput(`bash: command not found: ${cmd}. Type 'help' for commands.`, 'text-red-400');
         }
+      }
+    }
 
-        function connectToPeer(remoteId) {
-            conn = peer.connect(remoteId);
-            setupChatConnection();
+    function printTerminalOutput(text, colorClass = 'text-gray-300') {
+      const out = document.getElementById('terminalOutput');
+      const div = document.createElement('div');
+      div.className = `${colorClass} whitespace-pre-wrap font-mono`;
+      div.innerText = text;
+      out.appendChild(div);
+      out.scrollTop = out.scrollHeight;
+    }
 
-            if (localStream) {
-                const call = peer.call(remoteId, localStream);
-                call.on('stream', (remoteStream) => {
-                    addRemoteVideo(remoteStream);
-                });
-            }
-        }
+    function clearTerminal() {
+      document.getElementById('terminalOutput').innerHTML = '';
+    }
 
-        function setupChatConnection() {
-            conn.on('data', (data) => {
-                appendMessage(data, 'received');
-            });
-            conn.on('open', () => {
-                appendSystemMessage("انضم صديق جديد للاجتماع الآن! 🎉");
-            });
-        }
+    // TOGGLES & MODALS
+    function toggleSidebar() {
+      const panel = document.getElementById('sidebarPanel');
+      panel.classList.toggle('hidden');
+    }
 
-        function addRemoteVideo(remoteStream) {
-            if (document.getElementById('remoteVideo')) return;
+    function toggleTerminal() {
+      const panel = document.getElementById('terminalPanel');
+      panel.classList.toggle('hidden');
+    }
 
-            const videoContainer = document.getElementById('videoContainer');
-            const wrapper = document.createElement('div');
-            wrapper.className = 'video-wrapper';
-            wrapper.id = 'remoteWrapper';
+    function togglePreview() {
+      const preview = document.getElementById('previewContainer');
+      preview.classList.toggle('hidden');
+    }
 
-            const video = document.createElement('video');
-            video.id = 'remoteVideo';
-            video.autoplay = true;
-            video.playsInline = true;
-            video.srcObject = remoteStream;
+    function switchSidebarTab(tab) {
+      document.getElementById('sidebarTitle').innerText = tab.toUpperCase();
+      const sidebar = document.getElementById('sidebarPanel');
+      sidebar.classList.remove('hidden');
 
-            const tag = document.createElement('div');
-            tag.className = 'user-tag';
-            tag.innerHTML = `<span>مشارك آخر</span>`;
+      // Update icon highlights
+      ['Explorer', 'Search', 'Git', 'Debug', 'Extensions'].forEach(t => {
+        const btn = document.getElementById(`nav${t}Btn`);
+        if (btn) btn.className = "p-2 hover:text-white w-full flex justify-center text-gray-500";
+      });
 
-            wrapper.appendChild(video);
-            wrapper.appendChild(tag);
-            videoContainer.appendChild(wrapper);
-        }
+      const activeBtn = document.getElementById(`nav${tab.charAt(0).toUpperCase() + tab.slice(1)}Btn`);
+      if (activeBtn) {
+        activeBtn.className = "p-2 text-white border-l-2 border-blue-500 w-full flex justify-center";
+      }
+    }
 
-        async function toggleMic() {
-            isMicOn = !isMicOn;
-            if (!localStream) await initStream();
-            if (localStream && localStream.getAudioTracks()[0]) {
-                localStream.getAudioTracks()[0].enabled = isMicOn;
-            }
-            const btn = document.getElementById('micBtn');
-            const icon = document.getElementById('micStatusIcon');
-            if (isMicOn) {
-                btn.classList.remove('active-off');
-                btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                icon.className = 'fa-solid fa-microphone';
-                icon.style.color = '#25d366';
-            } else {
-                btn.classList.add('active-off');
-                btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
-                icon.className = 'fa-solid fa-microphone-slash';
-                icon.style.color = '#ea4335';
-            }
-        }
+    function openSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
 
-        async function toggleCam() {
-            isCamOn = !isCamOn;
-            if (!localStream) await initStream();
-            if (localStream && localStream.getVideoTracks()[0]) {
-                localStream.getVideoTracks()[0].enabled = isCamOn;
-            }
-            const btn = document.getElementById('camBtn');
-            const placeholder = document.getElementById('videoPlaceholder');
-            if (isCamOn) {
-                btn.classList.remove('active-off');
-                btn.innerHTML = '<i class="fa-solid fa-video"></i>';
-                placeholder.style.display = 'none';
-            } else {
-                btn.classList.add('active-off');
-                btn.innerHTML = '<i class="fa-solid fa-video-slash"></i>';
-                placeholder.style.display = 'flex';
-            }
-        }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
 
-        function copyInviteLink() {
-            const peerId = document.getElementById('roomCode').innerText;
-            const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${peerId}`;
-            navigator.clipboard.writeText(inviteUrl);
-            alert("تم نسخ رابط الدعوة! ابعته لصاحبك أول ما يدوس عليه هيدخل معاك على طول:\n" + inviteUrl);
-        }
+    function saveSettings() {
+      const fontSize = parseInt(document.getElementById('settingFontSize').value) || 14;
+      const tabSize = parseInt(document.getElementById('settingTabSize').value) || 4;
+      const wordWrap = document.getElementById('settingWordWrap').value;
 
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text) return;
+      if (editor) {
+        editor.updateOptions({
+          fontSize: fontSize,
+          tabSize: tabSize,
+          wordWrap: wordWrap
+        });
+      }
 
-            appendMessage(text, 'sent');
-            if (conn && conn.open) {
-                conn.send(text);
-            }
-            input.value = '';
-        }
+      closeSettingsModal();
+    }
 
-        function appendMessage(text, type) {
-            const messages = document.getElementById('chatMessages');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${type}`;
-            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            msgDiv.innerHTML = `${text}<span class="time">${time}</span>`;
-            messages.appendChild(msgDiv);
-            messages.scrollTop = messages.scrollHeight;
-        }
+    function showMenuAlert(menuName) {
+      printTerminalOutput(`[Menu Action]: Clicked ${menuName} menu item.`, 'text-yellow-400');
+    }
 
-        function appendSystemMessage(text) {
-            const messages = document.getElementById('chatMessages');
-            const msgDiv = document.createElement('div');
-            msgDiv.style.textAlign = 'center';
-            msgDiv.style.fontSize = '0.8rem';
-            msgDiv.style.color = '#25d366';
-            msgDiv.style.margin = '8px 0';
-            msgDiv.innerText = text;
-            messages.appendChild(msgDiv);
-        }
-
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-
-        function toggleChat() {
-            document.getElementById('chatSidebar').classList.toggle('collapsed');
-        }
-
-        function endCall() {
-            if (confirm("هل تريد مغادرة الاجتماع؟")) {
-                if (localStream) localStream.getTracks().forEach(t => t.stop());
-                location.reload();
-            }
-        }
-
-        initPeer();
-        initStream();
-    </script>
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      // Ctrl+S or Cmd+S to save & run
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveFilesToStorage();
+        runLivePreview();
+        printTerminalOutput('Files saved and live preview updated.', 'text-emerald-400');
+      }
+    });
+  </script>
 </body>
 </html>
